@@ -206,3 +206,31 @@ results.csv
 
 # CI test asset cache
 .ultralytics_cache/
+
+# Journal experiment outputs
+journal_project/experiments/
+journal_project/logs/
+
+# Large model and export files
+*.pt
+*.pth
+*.onnx
+*.engine
+*.torchscript
+
+# Local datasets
+dataset/
+datasets/
+
+# Local environment
+.venv/
+
+# Ultralytics caches
+*.cache
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Notebook cache
+.ipynb_checkpoints/

@@ -1,0 +1,40 @@
+experiment:
+  group: baseline
+  name: yolo11s
+  description: Plain pretrained YOLO11s baseline for the journal study
+
+model:
+  weights: yolo11s.pt
+  pretrained: true
+
+dataset:
+  data: ../dataset/data.yaml
+
+training:
+  imgsz: 640
+  epochs: 100
+  batch: 16
+  optimizer: SGD
+  lr0: 0.01
+  lrf: 0.1
+  momentum: 0.93
+  weight_decay: 0.0005
+  patience: 20
+  cos_lr: true
+
+reproducibility:
+  seed: 42
+  deterministic: true
+
+runtime:
+  device: "0"
+  workers: 4
+  amp: true
+  cache: false
+
+output:
+  plots: true
+  save: true
+  save_period: -1
+  exist_ok: false
+  verbose: true
