@@ -8,7 +8,7 @@ model:
   pretrained: true
 
 dataset:
-  data: ../dataset/data.yaml
+  data: ../dataset_grouped_final/data.yaml
 
 training:
   imgsz: 640
