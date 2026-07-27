@@ -13,6 +13,7 @@ import torch.nn as nn
 from ultralytics.nn.autobackend import check_class_names
 from ultralytics.nn.modules import (
     AIFI,
+    AdaptiveDualAttention,
     C1,
     C2,
     C2PSA,
@@ -1978,6 +1979,12 @@ def parse_model(d, ch, verbose=True):
             c1 = ch[f]
             c2 = c1
             args = [c1, *args]
+
+        elif m is AdaptiveDualAttention:
+            c1 = ch[f]
+            c2 = c1
+            args = [c1, *args]
+
         elif m is AIFI:
             args = [ch[f], *args]
         elif m in frozenset({HGStem, HGBlock}):

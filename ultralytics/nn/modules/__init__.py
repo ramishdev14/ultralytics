@@ -22,6 +22,7 @@ Examples:
     ... )
 """
 
+from .adaptive_dual_attention import AdaptiveDualAttention
 from .block import (
     C1,
     C2,
@@ -115,6 +116,7 @@ from .transformer import (
 
 __all__ = (
     "AIFI",
+    "AdaptiveDualAttention",
     "C1",
     "C2",
     "C2PSA",

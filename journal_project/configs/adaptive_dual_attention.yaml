@@ -1,0 +1,41 @@
+experiment:
+  group: adaptive_dual_attention
+  name: yolo11s_adaptive_dual_attention
+  description: YOLO11s with adaptive fusion of Coordinate Attention and CBAM at the P3, P4, and P5 backbone stages
+
+model:
+  architecture: journal_project/models/yolo11s_adaptive_dual_attention.yaml
+  weights: yolo11s.pt
+  pretrained: true
+
+dataset:
+  data: ../dataset_grouped_final/data.yaml
+
+training:
+  imgsz: 640
+  epochs: 100
+  batch: 16
+  optimizer: SGD
+  lr0: 0.01
+  lrf: 0.1
+  momentum: 0.93
+  weight_decay: 0.0005
+  patience: 20
+  cos_lr: true
+
+reproducibility:
+  seed: 42
+  deterministic: true
+
+runtime:
+  device: "0"
+  workers: 4
+  amp: true
+  cache: false
+
+output:
+  plots: true
+  save: true
+  save_period: -1
+  exist_ok: false
+  verbose: true

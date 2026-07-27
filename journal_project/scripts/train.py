@@ -412,7 +412,6 @@ def resolve_model_source(
     if repository_candidate.exists():
         return str(repository_candidate.resolve())
 
-    # Permit official identifiers such as yolo11s.pt.
     if candidate.parent == Path("."):
         return model_value
 
@@ -1599,6 +1598,95 @@ def print_experiment_summary(
 
 
 # ---------------------------------------------------------------------------
+# Attention architecture verification
+# ---------------------------------------------------------------------------
+
+
+def identify_expected_attention_module(
+    model_architecture: str | None,
+) -> str | None:
+    """
+    Determine the expected custom attention module from the model YAML name.
+
+    The Adaptive Dual Attention check must be performed first because it
+    is the proposed journal architecture and has its own dedicated module.
+    """
+
+    if model_architecture is None:
+        return None
+
+    architecture_stem = Path(
+        model_architecture
+    ).stem.lower()
+
+    if "adaptive_dual_attention" in architecture_stem:
+        return "AdaptiveDualAttention"
+
+    if "coordatt" in architecture_stem:
+        return "CoordAtt"
+
+    if "cbam" in architecture_stem:
+        return "CBAM"
+
+    return None
+
+
+def count_attention_blocks(
+    model: YOLO,
+    module_name: str,
+) -> int:
+    """Count attention blocks with the requested class name."""
+
+    return sum(
+        module.__class__.__name__ == module_name
+        for module in model.model.modules()
+    )
+
+
+def verify_attention_architecture(
+    model: YOLO,
+    expected_module: str,
+    verification_stage: str,
+) -> int:
+    """
+    Verify that a model contains the expected custom attention blocks.
+
+    Args:
+        model:
+            Ultralytics YOLO model.
+
+        expected_module:
+            Expected attention class name.
+
+        verification_stage:
+            Human-readable stage, such as "before training" or
+            "in saved best.pt".
+
+    Returns:
+        Number of matching attention blocks.
+    """
+
+    block_count = count_attention_blocks(
+        model=model,
+        module_name=expected_module,
+    )
+
+    print(
+        f"{expected_module} blocks {verification_stage}: "
+        f"{block_count}"
+    )
+
+    if block_count == 0:
+        raise RuntimeError(
+            f"The model contains no {expected_module} blocks "
+            f"{verification_stage}. Training or checkpoint use was "
+            "stopped to prevent an invalid baseline-only experiment."
+        )
+
+    return block_count
+
+
+# ---------------------------------------------------------------------------
 # Main experiment
 # ---------------------------------------------------------------------------
 
@@ -1686,6 +1774,12 @@ def main() -> None:
         if architecture_value is not None
         and str(architecture_value).strip()
         else None
+    )
+
+    expected_attention_module = (
+        identify_expected_attention_module(
+            model_architecture
+        )
     )
 
     seed = int(
@@ -1900,20 +1994,27 @@ def main() -> None:
                 "Transferring compatible pretrained parameters from: "
                 f"{model_source}"
             )
+
             model.load(
                 model_source
             )
 
-            # Compatible weights are already transferred into the custom
-            # architecture. Disable trainer-level pretrained loading so
-            # Ultralytics cannot silently rebuild the official architecture.
+            # The compatible official weights have already been transferred
+            # into the custom architecture. Trainer-level pretrained loading
+            # must remain disabled. Otherwise Ultralytics can silently rebuild
+            # the official architecture and discard custom attention modules.
             training_arguments["pretrained"] = False
 
             print(
                 "Pretrained transfer completed. Trainer-level pretrained "
                 "loading has been disabled to preserve the custom architecture."
             )
+
         else:
+            # Ensure trainer-level loading is also disabled when the custom
+            # model is intentionally trained from scratch.
+            training_arguments["pretrained"] = False
+
             print(
                 "Pretrained initialization is disabled; "
                 "training the custom architecture from scratch."
@@ -1933,37 +2034,20 @@ def main() -> None:
         verbose=True
     )
 
-    architecture_stem = (
-        Path(model_architecture).stem.lower()
-        if model_architecture is not None
-        else ""
-    )
-
-    expected_attention_module: str | None = None
-
-    if "coordatt" in architecture_stem:
-        expected_attention_module = "CoordAtt"
-    elif "cbam" in architecture_stem:
-        expected_attention_module = "CBAM"
+    attention_blocks_before_training = None
 
     if expected_attention_module is not None:
-        attention_blocks_before_training = sum(
-            module.__class__.__name__ == expected_attention_module
-            for module in model.model.modules()
-        )
-
-        print(
-            f"{expected_attention_module} blocks before training: "
-            f"{attention_blocks_before_training}"
-        )
-
-        if attention_blocks_before_training == 0:
-            raise RuntimeError(
-                f"The configured {expected_attention_module} architecture "
-                f"contains no {expected_attention_module} blocks immediately "
-                "before training. Training was stopped to prevent an invalid "
-                "baseline-only run."
+        attention_blocks_before_training = (
+            verify_attention_architecture(
+                model=model,
+                expected_module=(
+                    expected_attention_module
+                ),
+                verification_stage=(
+                    "before training"
+                ),
             )
+        )
 
     print("\nStarting training...")
 
@@ -1994,6 +2078,8 @@ def main() -> None:
         / "best.pt"
     )
 
+    attention_blocks_in_checkpoint = None
+
     if expected_attention_module is not None:
         if not best_checkpoint_path.exists():
             raise FileNotFoundError(
@@ -2006,22 +2092,17 @@ def main() -> None:
             str(best_checkpoint_path)
         )
 
-        attention_blocks_in_checkpoint = sum(
-            module.__class__.__name__ == expected_attention_module
-            for module in verified_model.model.modules()
-        )
-
-        print(
-            f"{expected_attention_module} blocks in saved best.pt: "
-            f"{attention_blocks_in_checkpoint}"
-        )
-
-        if attention_blocks_in_checkpoint == 0:
-            raise RuntimeError(
-                f"The saved best.pt does not contain "
-                f"{expected_attention_module} blocks. The checkpoint is "
-                f"invalid for the {expected_attention_module} experiment."
+        attention_blocks_in_checkpoint = (
+            verify_attention_architecture(
+                model=verified_model,
+                expected_module=(
+                    expected_attention_module
+                ),
+                verification_stage=(
+                    "in saved best.pt"
+                ),
             )
+        )
 
     environment_record = (
         build_environment_record(
@@ -2067,6 +2148,18 @@ def main() -> None:
     ] = str(
         results_directory
     )
+
+    environment_record[
+        "expected_attention_module"
+    ] = expected_attention_module
+
+    environment_record[
+        "attention_blocks_before_training"
+    ] = attention_blocks_before_training
+
+    environment_record[
+        "attention_blocks_in_best_checkpoint"
+    ] = attention_blocks_in_checkpoint
 
     save_json(
         results_directory
@@ -2138,6 +2231,20 @@ def main() -> None:
                 "pretrained",
                 True,
             )
+        ),
+        "trainer_level_pretrained": (
+            training_arguments.get(
+                "pretrained"
+            )
+        ),
+        "expected_attention_module": (
+            expected_attention_module
+        ),
+        "attention_blocks_before_training": (
+            attention_blocks_before_training
+        ),
+        "attention_blocks_in_best_checkpoint": (
+            attention_blocks_in_checkpoint
         ),
         "data_yaml": str(
             data_yaml
@@ -2228,6 +2335,20 @@ def main() -> None:
         f"{experiment_summary['total_training_seconds']:.2f} "
         "seconds"
     )
+
+    if expected_attention_module is not None:
+        print(
+            "Attention module  : "
+            f"{expected_attention_module}"
+        )
+        print(
+            "Blocks pre-train  : "
+            f"{attention_blocks_before_training}"
+        )
+        print(
+            "Blocks in best.pt : "
+            f"{attention_blocks_in_checkpoint}"
+        )
 
     if highest_map_epoch_summary.get(
         "available"
