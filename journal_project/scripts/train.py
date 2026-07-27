@@ -1933,26 +1933,37 @@ def main() -> None:
         verbose=True
     )
 
-    coordatt_blocks_before_training = sum(
-        module.__class__.__name__ == "CoordAtt"
-        for module in model.model.modules()
+    architecture_stem = (
+        Path(model_architecture).stem.lower()
+        if model_architecture is not None
+        else ""
     )
 
-    print(
-        "CoordAtt blocks before training: "
-        f"{coordatt_blocks_before_training}"
-    )
+    expected_attention_module: str | None = None
 
-    if (
-        model_architecture is not None
-        and "coordatt" in Path(model_architecture).stem.lower()
-        and coordatt_blocks_before_training == 0
-    ):
-        raise RuntimeError(
-            "The configured CoordAtt architecture contains no CoordAtt "
-            "blocks immediately before training. Training was stopped to "
-            "prevent another baseline-only run."
+    if "coordatt" in architecture_stem:
+        expected_attention_module = "CoordAtt"
+    elif "cbam" in architecture_stem:
+        expected_attention_module = "CBAM"
+
+    if expected_attention_module is not None:
+        attention_blocks_before_training = sum(
+            module.__class__.__name__ == expected_attention_module
+            for module in model.model.modules()
         )
+
+        print(
+            f"{expected_attention_module} blocks before training: "
+            f"{attention_blocks_before_training}"
+        )
+
+        if attention_blocks_before_training == 0:
+            raise RuntimeError(
+                f"The configured {expected_attention_module} architecture "
+                f"contains no {expected_attention_module} blocks immediately "
+                "before training. Training was stopped to prevent an invalid "
+                "baseline-only run."
+            )
 
     print("\nStarting training...")
 
@@ -1983,10 +1994,7 @@ def main() -> None:
         / "best.pt"
     )
 
-    if (
-        model_architecture is not None
-        and "coordatt" in Path(model_architecture).stem.lower()
-    ):
+    if expected_attention_module is not None:
         if not best_checkpoint_path.exists():
             raise FileNotFoundError(
                 "Training finished, but best.pt was not found for "
@@ -1998,20 +2006,21 @@ def main() -> None:
             str(best_checkpoint_path)
         )
 
-        coordatt_blocks_in_checkpoint = sum(
-            module.__class__.__name__ == "CoordAtt"
+        attention_blocks_in_checkpoint = sum(
+            module.__class__.__name__ == expected_attention_module
             for module in verified_model.model.modules()
         )
 
         print(
-            "CoordAtt blocks in saved best.pt: "
-            f"{coordatt_blocks_in_checkpoint}"
+            f"{expected_attention_module} blocks in saved best.pt: "
+            f"{attention_blocks_in_checkpoint}"
         )
 
-        if coordatt_blocks_in_checkpoint == 0:
+        if attention_blocks_in_checkpoint == 0:
             raise RuntimeError(
-                "The saved best.pt does not contain CoordAtt blocks. "
-                "The checkpoint is invalid for the CoordAtt experiment."
+                f"The saved best.pt does not contain "
+                f"{expected_attention_module} blocks. The checkpoint is "
+                f"invalid for the {expected_attention_module} experiment."
             )
 
     environment_record = (
