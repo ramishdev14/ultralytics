@@ -1,0 +1,93 @@
+{
+  "evaluation_type": "test",
+  "evaluation_started_at": "2026-08-17T02:24:01",
+  "evaluation_finished_at": "2026-08-17T02:25:03",
+  "evaluation_seconds": 61.505862,
+  "weights": "C:\\Users\\mramish24\\OneDrive - University of Oulu and Oamk\\Documents\\Journal_YOLO11\\ultralytics\\journal_project\\experiments\\adaptive_dual_attention_ablation\\yolo11s_adaptive_dual_attention_p4\\weights\\best.pt",
+  "weights_sha256": "2ea84698cae40e2c0c052a3703ffcbd7af99ab3f935c6c1b0962dc3e1d715bcf",
+  "data_yaml": "C:\\Users\\mramish24\\OneDrive - University of Oulu and Oamk\\Documents\\Journal_YOLO11\\dataset_grouped_final\\data.yaml",
+  "data_yaml_sha256": "9a4f4b3aff1ecb4e91631320072ef037e90e1922d13b3677fab8dafd7db2925c",
+  "dataset_root": "C:\\Users\\mramish24\\OneDrive - University of Oulu and Oamk\\Documents\\Journal_YOLO11\\dataset_grouped_final",
+  "test_paths": [
+    "C:\\Users\\mramish24\\OneDrive - University of Oulu and Oamk\\Documents\\Journal_YOLO11\\dataset_grouped_final\\images\\test"
+  ],
+  "results_directory": "C:\\Users\\mramish24\\OneDrive - University of Oulu and Oamk\\Documents\\Journal_YOLO11\\ultralytics\\journal_project\\results\\test_evaluations\\yolo11s_adaptive_dual_attention_p4_test-2",
+  "settings": {
+    "split": "test",
+    "imgsz": 640,
+    "batch": 32,
+    "device": "0",
+    "workers": 8,
+    "conf": 0.001,
+    "iou": 0.7,
+    "max_det": 300,
+    "half": false
+  },
+  "overall_metrics": {
+    "precision": 0.7377737261330806,
+    "recall": 0.7615716837339058,
+    "map50": 0.7709632025246623,
+    "map75": 0.7365717533256126,
+    "map50_95": 0.6713235546591895
+  },
+  "per_class_metrics": [
+    {
+      "class_id": 0,
+      "class_name": "car",
+      "precision": 0.8430907785277852,
+      "recall": 0.9347097907857889,
+      "map50": 0.957347584911273,
+      "map50_95": 0.8704027795355757
+    },
+    {
+      "class_id": 1,
+      "class_name": "truck",
+      "precision": 0.6849558572171824,
+      "recall": 0.7531436135009927,
+      "map50": 0.7706584149464522,
+      "map50_95": 0.6892215547034122
+    },
+    {
+      "class_id": 2,
+      "class_name": "bus",
+      "precision": 0.5683572282832501,
+      "recall": 0.4444444444444444,
+      "map50": 0.4177692526993205,
+      "map50_95": 0.3215272317956116
+    },
+    {
+      "class_id": 3,
+      "class_name": "traffic_sign",
+      "precision": 0.8546910405041046,
+      "recall": 0.9139888862043972,
+      "map50": 0.9380775575416038,
+      "map50_95": 0.8041426526021584
+    }
+  ],
+  "speed_ms_per_image": {
+    "preprocess": 1.2878026389833257,
+    "inference": 3.2615385176660663,
+    "loss": 0.0002728804190259308,
+    "postprocess": 1.0314254912859298
+  },
+  "environment": {
+    "python_version": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "python_executable": "C:\\Users\\mramish24\\OneDrive - University of Oulu and Oamk\\Documents\\Journal_YOLO11\\.venv\\Scripts\\python.exe",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch_version": "2.13.0+cu130",
+    "torch_cuda_runtime": "13.0",
+    "cuda_available": true,
+    "cuda_devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA GeForce RTX 5080 Laptop GPU",
+        "total_memory_gb": 15.92,
+        "compute_capability": "12.0"
+      }
+    ],
+    "ultralytics_version": "8.4.92",
+    "ultralytics_source": "C:\\Users\\mramish24\\OneDrive - University of Oulu and Oamk\\Documents\\Journal_YOLO11\\ultralytics\\ultralytics\\__init__.py",
+    "git_commit": "dc3e94b5e57af71490a0ee556d914fb17b15d548",
+    "git_status": "M ultralytics/nn/modules/adaptive_dual_attention.py\n?? journal_project/configs/adaptive_dual_attention_p4_dynamic_fusion.yaml\n?? journal_project/models/yolo11s_adaptive_dual_attention_p4_dynamic_fusion.yaml\n?? journal_project/results/test_evaluations/yolo11s_adaptive_dual_attention_p4_test-2/\n?? journal_project/scripts/inspect_attention_checkpoints.py"
+  }
+}
